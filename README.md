@@ -1,6 +1,11 @@
 # Gladiator Area 76 — Member Onboarding V2
 
-Aktualisiert am 28.09.2026: heller Look, eigene Wahl und Beratung getrennt, evidenzbasierte Grundlagen, Antwortübersicht und PDF-Druckansicht.
+Aktualisiert am 29.09.2026: heller Look, eigene Wahl und Beratung getrennt, antwortabhängige Wissensblöcke, Antwortübersicht und PDF-Druckansicht.
+
+## Passendes Wissen statt festem Hinweistext
+„Gut zu wissen“ zeigt drei bis vier Blöcke. `foundationBlocks()` wählt zuerst bis zu zwei passende Zielthemen und dann bis zu zwei Hinweise zu Erfahrung, Zeitbudget, Betreuung oder Trainingsroutine. Bei abgeklärten Einschränkungen hat ein Hinweis auf den individuellen Rahmen Vorrang. Ungeklärte Einschränkungen führen zu drei Vorbereitungshinweisen, nicht zu Trainingsanweisungen. Fehlende Plätze werden bis zu insgesamt drei Blöcken mit allgemeinen Orientierungs- bzw. Gesprächstipps ergänzt.
+
+Gleiche Antworten ergeben dieselbe Auswahl; eine Antwortänderung berechnet sie neu. Der PDF-Export übernimmt genau diese sichtbaren Blöcke. Quellen werden nur für verwendete Aussagen angezeigt. Praktische Studiotipps sind als solche gekennzeichnet. Ein Menopause-/Osteoporoseblock wird nicht automatisch aus Alter oder Interessen abgeleitet, da die nötigen Angaben nicht erhoben werden.
 
 ## Eigene Wahl und Empfehlung
 Die Kampfsportfrage bietet „Überspringen – aktuell nicht relevant“. Danach entfallen die Altersfrage und Kampfsportvorschläge sowie zugehörige Einstiegsschritte. Die ursprünglichen Antworten bleiben in der Antwortübersicht nachvollziehbar, die spätere Entscheidung wird im Ergebnis erklärt.

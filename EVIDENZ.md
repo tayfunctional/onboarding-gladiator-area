@@ -1,5 +1,9 @@
 # Grundlagen und Einordnung
 
+Update 29.09.2026: Die starre Dreierkombination wurde durch drei bis vier antwortabhängige Wissensblöcke ersetzt. Die automatische Auswahl verwendet WHO, ACSM und die Beweglichkeitsübersicht nur bei passendem Thema. NIAMS und NOGG bleiben hier als Dokumentation der früheren Knochenhinweise; diese werden mangels entsprechender Angaben nicht mehr automatisch angezeigt. Es werden weder Geschlecht noch Menopausenstatus aus Altersgruppen abgeleitet.
+
+Die Auswahl ist redaktionell und deterministisch: maximal zwei Zielthemen, maximal zwei Hinweise zu Erfahrung und Routine, gegebenenfalls vorrangiger Hinweis zu bekannten Einschränkungen; insgesamt maximal vier. Bei Bedarf ergänzen allgemeine Orientierung und Gesprächstipps bis zu drei Blöcke. Ungeklärte Einschränkungen erhalten ausschließlich drei Vorbereitungshinweise. Praktische Vorschläge wie Ersatztermin, Coach-Gespräch oder Planbesprechung sind als Studiotipps markiert und werden nicht als Studienergebnisse ausgegeben.
+
 Recherche: 28.09.2026. Verwendet wurden Fachgesellschaften, öffentliche Gesundheitsinstitutionen und begutachtete Übersichtsarbeiten. Quellenjahr und Recherchedatum sind nicht dasselbe. Inhalte sind allgemeine Information für Erwachsene, keine Diagnose oder Osteoporoserisikoberechnung.
 
 ## Quellen

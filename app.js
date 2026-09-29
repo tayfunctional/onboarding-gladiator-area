@@ -656,31 +656,99 @@ function renderChoice() {
   </section>`;
 }
 
+// Deterministic editorial matching: goals first, then experience and routine.
+// Identical answers produce identical information, including in the PDF.
+function foundationBlocks(a = state.answers) {
+  const goals = a.goals || [];
+  const interests = a.interests || [];
+  const motivation = a.motivation || [];
+  const hasGoal = (...keys) => keys.some(key => goals.includes(key));
+  const hasInterest = (...keys) => keys.some(key => interests.includes(key));
+  const block = (id, title, context, text, sources = []) => ({ id, title, context, text, sources });
+  const goalBlocks = [];
+  const routineBlocks = [];
+  const selected = [];
+
+  if (a.health === "unclear") {
+    return [
+      block("clarify", "Erst klären, dann planen", "Für deinen sicheren Einstieg",
+        "Wenn unklar ist, welche Belastungen möglich sind, klären wir zuerst die nächsten Schritte. Eine nötige medizinische Abklärung kann das Gespräch im Studio nicht ersetzen."),
+      block("prepare", "Deine Fragen mitbringen", "Zur Vorbereitung auf das Gespräch",
+        "Was möchtest du wieder können? Welche Bewegungen verunsichern dich? Diese Fragen helfen uns im Gespräch. Medizinische Details musst du hier nicht eintragen."),
+      block("later", "Deine Wahl bleibt der Ausgangspunkt", "Für die Zeit nach der Klärung",
+        "Wir behalten deine Ziele und Interessen im Blick. Umfang, Übungen und Belastungen legen wir erst fest, wenn die offenen Fragen geklärt sind.")
+    ];
+  }
+  if (a.health === "cleared") selected.push(block("limits", "Deine Freigabe als Rahmen", "Du hast abgeklärte Einschränkungen angegeben",
+    "Besprich deine bekannten Belastungsgrenzen vor dem Einstieg mit dem Coach. Eine Freigabe bedeutet nicht automatisch, dass jede Übung oder Intensität zu dir passt."));
+
+  if (hasGoal("mobility") || hasInterest("yoga")) goalBlocks.push(block("mobility", "Kraft & Beweglichkeit", "Passend zu deinem Beweglichkeitsziel oder Yoga-Interesse",
+    "Krafttraining kann den Bewegungsumfang verbessern. Eine Übersicht von 2025 zeigt positive Effekte, aber auch erhebliche Unterschiede und methodische Schwächen der Studien. Es ist kein garantierter Effekt jeder Übung.", [3]));
+  if (hasGoal("muscle", "strength")) goalBlocks.push(block("strength", "Kraft gezielt aufbauen", "Du möchtest stärker werden oder Muskeln aufbauen",
+    "Krafttraining verbessert Kraft und Muskelmasse. Belastung und Trainingsumfang sollten zum Ziel passen. Geräte und freie Gewichte sind mögliche Wege – Regelmäßigkeit zählt.", [2]));
+  if (hasGoal("endurance", "fitness", "hyroxgoal") || hasInterest("hyrox", "hybrid")) goalBlocks.push(block("endurance", "Ausdauer & Kraft ergänzen sich", "Passend zu deinem Fitness- oder Ausdauerfokus",
+    "Die WHO empfiehlt Erwachsenen wöchentlich 150–300 Minuten moderate oder 75–150 Minuten intensive Ausdaueraktivität sowie Muskelkräftigung an mindestens zwei Tagen. Bewegung außerhalb des Studios zählt mit.", [1]));
+  if (hasGoal("back") || hasInterest("backclass")) goalBlocks.push(block("back", "Deinen Rücken mitdenken", "Du möchtest deinen Rücken stärken",
+    "Besprich mit uns, welche Bewegungen du im Alltag besser bewältigen möchtest. Daraus planen wir deinen Einstieg. Ein Rückenziel allein sagt nichts über eine Diagnose aus."));
+  if (hasGoal("bodycomp") && !hasGoal("muscle", "strength")) goalBlocks.push(block("bodycomp", "Muskelkraft mit einplanen", "Du möchtest deine Körperkomposition verändern",
+    "Krafttraining unterstützt den Muskelaufbau. Das ist ein Baustein für dein Ziel; aus den Antworten lässt sich keine bestimmte Gewichts- oder Körperfettveränderung vorhersagen.", [2]));
+  if (hasGoal("stress")) goalBlocks.push(block("balance", "Ein Ausgleich, der zu dir passt", "Training soll dir Ausgleich geben",
+    "Plane eine Einheit, auf die du dich freuen kannst. Ob ruhig oder aktiv: Besprich mit uns, was dir gefällt und welcher Termin gut in deinen Alltag passt."));
+  if (a.combatPreference !== "skip" && (hasGoal("combat") || hasInterest("boxing", "kickboxing"))) goalBlocks.push(block("combat", "Deinen Kampfsportstart besprechen", "Du interessierst dich für Kampfsport",
+    "Sag dem Coach vor der ersten Einheit, welche Erfahrung du mitbringst. Klärt gemeinsam Kursablauf, Ausrüstung und deinen Einstieg. Du musst noch keine bestimmte Technik beherrschen."));
+
+  if (["new", "return"].includes(a.experience)) routineBlocks.push(block("start", a.experience === "return" ? "Schrittweise wieder einsteigen" : "Dein Einstieg darf einfach sein", a.experience === "return" ? "Du steigst nach einer Pause wieder ein" : "Du startest neu",
+    "Wähle zunächst einen gut umsetzbaren Umfang und steigere schrittweise. Regelmäßiges Krafttraining ist wichtiger als ein komplizierter Plan.", [2]));
+  if (a.commitment === "1") routineBlocks.push(block("one-day", "Ein Termin ist ein Anfang", "Du hast einen Trainingstag pro Woche eingeplant",
+    "Dein fester Termin ist ein sinnvoller Start. Die allgemeine WHO-Empfehlung umfasst Muskelkräftigung an mindestens zwei Tagen; weitere Bewegung kann auch außerhalb des Studios stattfinden.", [1]));
+  if ((a.time || []).includes("shift") || motivation.includes("flex")) routineBlocks.push(block("flexibility", "Eine flexible Woche planen", "Wechselnde Zeiten oder Flexibilität sind dir wichtig",
+    "Lege mit uns eine machbare Hauptoption und einen Ersatztermin fest. So kannst du deine gewählten Angebote an unterschiedliche Wochen anpassen, ohne jedes Mal neu planen zu müssen."));
+  if (a.support === "oneone") routineBlocks.push(block("personal", "Deine 1:1-Betreuung konkret machen", "Du wünschst dir intensive persönliche Begleitung",
+    "Besprich, wobei du Unterstützung möchtest: Übungsauswahl, Technik oder Trainingsplanung. Personal Training ist eine kostenpflichtige Zusatzoption; Umfang und Kosten klären wir vorab."));
+  else if (motivation.some(key => ["coach", "group"].includes(key)) || a.style === "classes" || a.support === "some") routineBlocks.push(block("coach", "Den Coach mitnehmen", "Begleitung oder Gruppenatmosphäre sind dir wichtig",
+    "Erzähle dem Coach beim Einstieg kurz von deinem Ziel und deiner Erfahrung. Klärt gemeinsam, wie du Rückmeldung bekommst und welcher Kurs in deinen Alltag passt."));
+  if (motivation.includes("progress") || a.experience === "3plus") routineBlocks.push(block("progress", "Fortschritt passend dosieren", "Du möchtest Entwicklung nachvollziehen oder bringst viel Erfahrung mit",
+    "Belastung und Umfang lassen sich an dein Ziel anpassen. Training bis zum Muskelversagen und komplizierte Methoden sind für Fortschritte nicht grundsätzlich erforderlich.", [2]));
+  if (motivation.includes("plan") || a.style === "solo") routineBlocks.push(block("plan", "Deinen Plan greifbar machen", "Struktur oder selbstständiges Training passen zu dir",
+    "Halte gemeinsam mit uns fest, welche Übungen, Geräte und Termine du zunächst nutzen möchtest. Frag nach einer Einweisung, wenn dir etwas noch nicht vertraut ist."));
+
+  selected.push(...goalBlocks.slice(0, 2), ...routineBlocks.slice(0, 2));
+  const fallback = [
+    block("weekly", "Dein Wochenrahmen", "Als allgemeine Orientierung für Erwachsene",
+      "Die WHO empfiehlt Krafttraining aller großen Muskelgruppen an mindestens zwei Tagen pro Woche. Der Einstieg darf kleiner sein und schrittweise wachsen.", [1]),
+    block("routine", "Deinen nächsten Termin festlegen", "Damit dein Start konkret wird",
+      "Wähle einen realistischen ersten Termin. Notiere, was du dafür brauchst und welche Frage du vorher noch klären möchtest."),
+    block("review", "Nach dem Einstieg kurz zurückschauen", "Für die weitere Planung",
+      "Besprich nach deinen ersten Einheiten mit uns: Was hat dir gefallen, was war unklar und was passt zeitlich? Daraus planen wir deine nächsten Schritte.")
+  ];
+  for (const item of fallback) {
+    if (selected.length >= 3) break;
+    if (item.id === "weekly" && selected.some(b => ["endurance", "one-day"].includes(b.id))) continue;
+    selected.push(item);
+  }
+  return selected.slice(0, 4);
+}
+
 function renderFoundations() {
-  const mobility = (state.answers.goals || []).includes("mobility");
+  const blocks = foundationBlocks();
+  const sourceIds = [...new Set(blocks.flatMap(b => b.sources))].sort((a, b) => a - b);
   return `
     <section class="foundations" aria-labelledby="foundationsTitle">
       <div class="section-kicker">GUT ZU WISSEN</div>
-      <h2 id="foundationsTitle">Warum wir Krafttraining mitdenken.</h2>
-      <p class="section-lead">${mobility ? "Du möchtest beweglicher werden. Dazu kann auch angepasstes Krafttraining beitragen." : "Krafttraining unterstützt Muskelkraft und körperliche Leistungsfähigkeit – auch ohne Muskelaufbau als Hauptziel."} Diese Grundlagen ergänzen deine Wahl.</p>
-      <div class="foundation-grid">
-        <article><h3>Regelmäßig statt perfekt</h3>
-          <p>Für Erwachsene empfiehlt die WHO Muskelkräftigung aller großen Muskelgruppen an mindestens zwei Tagen pro Woche. Dazu kommen 150–300 Minuten moderate oder 75–150 Minuten intensive Ausdaueraktivität pro Woche, auch außerhalb des Studios. <a href="#source-1">[1]</a></p>
-          <p>Ein realistischer Einstieg darf kleiner sein. Umfang und Belastung werden schrittweise angepasst. Die ACSM betont regelmäßiges, individuell passendes Training. <a href="#source-2">[2]</a></p>
-        </article>
-        <article><h3>Kraft & Beweglichkeit</h3>
-          <p>Krafttraining kann den Bewegungsumfang verbessern. Eine Übersicht von 2025 zeigt positive Effekte, weist aber auf deutliche Unterschiede und methodische Schwächen der Studien hin. Es gibt keine Garantie für einzelne Personen oder Übungen. <a href="#source-3">[3]</a></p>
-        </article>
-        <article><h3>Menopause & Knochen</h3>
-          <p>Der Östrogenabfall nach der Menopause erhöht das Osteoporoserisiko. <a href="#source-4">[4]</a> Geeignete Kombinationen aus Krafttraining und gewichtsbelastender Bewegung können den Knochenverlust nach der Menopause vermindern. Ein sicherer Schutz vor Knochenbrüchen ist damit nicht garantiert. <a href="#source-5">[5]</a></p>
-        </article>
+      <h2 id="foundationsTitle">Das passt zu deinem Start.</h2>
+      <p class="section-lead">Ausgewählt nach deinen Zielen, deiner Erfahrung und deinem Alltag. Diese Hinweise ergänzen deine Wahl.</p>
+      <div class="foundation-grid ${blocks.length === 4 ? "four-blocks" : ""}">
+        ${blocks.map(b => `<article data-foundation="${b.id}"><h3>${b.title}</h3>
+          <p class="foundation-context">${b.context}</p>
+          <p>${b.text} ${b.sources.map(id => `<a href="#source-${id}">[${id}]</a>`).join(" ")}</p>
+          ${b.sources.length ? "" : '<span class="foundation-tip-label">Tipp für dein Gespräch im Studio</span>'}
+        </article>`).join("")}
       </div>
-      <p class="foundation-note">Bei bekannter Osteoporose oder früheren Knochenbrüchen das Training mit ärztlicher bzw. physiotherapeutischer Unterstützung anpassen. Dies sind allgemeine Informationen. Wir erheben keinen Menopausenstatus und leiten kein persönliches Osteoporoserisiko ab.</p>
-      <details class="sources">
-        <summary>Quellen & Einordnung · Recherche 28.09.2026</summary>
-        <div class="source-content"><p>Die Grundlagen beruhen auf Leitlinien und Übersichtsarbeiten. Die Zuordnung zu unseren Studioangeboten ist eine Beratungshilfe, kein wissenschaftlich validierter Test.</p>
-        <ol>${evidenceSources.map(([title, url], i) => `<li id="source-${i + 1}"><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`).join("")}</ol></div>
-      </details>
+      ${sourceIds.length ? `<details class="sources">
+        <summary>Quellen & Einordnung · Geprüft am 29.09.2026</summary>
+        <div class="source-content"><p>Die verlinkten Aussagen beruhen auf Leitlinien und Übersichtsarbeiten. Praktische Gesprächstipps sind separat gekennzeichnet. Die Auswahl der Hinweise und Studioangebote ist eine Beratungshilfe, kein wissenschaftlich validierter Test.</p>
+        <ol>${sourceIds.map(id => { const [title, url] = evidenceSources[id - 1]; return `<li id="source-${id}" value="${id}"><a href="${url}" target="_blank" rel="noopener noreferrer">${title}</a></li>`; }).join("")}</ol></div>
+      </details>` : ""}
     </section>`;
 }
 

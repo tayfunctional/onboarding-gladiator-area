@@ -46,14 +46,14 @@ const questions = [
   },
   {
     id: "commitment",
-    title: "Wie oft kannst du dich realistisch pro Woche zum Training committen?",
+    title: "Wie oft kannst du Training realistisch in deine Woche einplanen?",
     subtitle: "Nicht das Maximum – sondern das, was langfristig wirklich in deinen Alltag passt.",
     type: "single",
     info: "Regelmäßigkeit ist wichtiger als ein perfekter Plan. Wir möchten dir etwas empfehlen, das du dauerhaft umsetzen kannst.",
     options: [
       ["1", "1× pro Woche", "Ein fester Termin, der wirklich klappt."],
-      ["2", "2× pro Woche", "Sehr gute Basis für kontinuierlichen Fortschritt."],
-      ["3", "3× pro Woche", "Optimal für viele kombinierte Trainingsmodelle."],
+      ["2", "2× pro Woche", "Zwei Termine, die in meinen Alltag passen."],
+      ["3", "3× pro Woche", "Raum für regelmäßiges Training und einen passenden Mix."],
       ["4", "4× pro Woche", "Mehr Spielraum für Kraft + Kurse."],
       ["5", "5× oder häufiger", "Hohe Trainingsfrequenz und viel Flexibilität."]
     ]
@@ -134,22 +134,18 @@ const questions = [
     ]
   },
   {
-    id: "combatPreference",
-    title: "Falls Kampfsport für dich interessant ist: Was spricht dich mehr an?",
-    subtitle: "Wenn Kampfsport für dich gerade kein Thema ist, kannst du diese Frage überspringen.",
+    id: "startEase",
+    title: "Was würde dir den Start leichter machen?",
+    subtitle: "Freiwillig. Wähle, was dir gerade am meisten helfen würde – oder geh direkt weiter.",
     type: "single",
-    conditional: () => {
-      const goals = state.answers.goals || [];
-      const interests = state.answers.interests || [];
-      return goals.includes("combat") || interests.includes("boxing") || interests.includes("kickboxing");
-    },
-    info: "Boxen arbeitet ausschließlich mit den Händen. Beim Kickboxen kommen zusätzlich Kicks dazu.",
+    optional: true,
+    info: "Es geht um deinen ersten Schritt, nicht um ein zusätzliches Angebot. Wir besprechen mit dir, was davon möglich ist.",
     options: [
-      ["hands", "Boxen", "Nur Hände."],
-      ["handsfeet", "Kickboxen", "Hände + Füße."],
-      ["both", "Beides klingt gut", "Ich möchte offen starten."],
-      ["unsure", "Noch unsicher", "Ich möchte mir beides anschauen."],
-      ["skip", "Überspringen – aktuell nicht relevant", "Für meinen Einstieg möchte ich Kampfsport nicht weiterverfolgen."]
+      ["appointment", "Ein fester erster Termin", "Gemeinsam einen passenden Zeitpunkt finden."],
+      ["intro", "Eine gute Einweisung", "Erst verstehen, wie alles funktioniert."],
+      ["company", "Nicht allein starten", "Besprechen, welche Begleitung beim Einstieg möglich ist."],
+      ["explore", "Erst einmal kennenlernen", "Ablauf und Möglichkeiten in Ruhe anschauen."],
+      ["none", "Ich bin startklar", "Ich brauche gerade keine zusätzliche Starthilfe."]
     ]
   },
   {
@@ -160,7 +156,7 @@ const questions = [
     conditional: () => {
       const goals = state.answers.goals || [];
       const interests = state.answers.interests || [];
-      return state.answers.combatPreference !== "skip" && (goals.includes("combat") || interests.includes("boxing") || interests.includes("kickboxing"));
+      return goals.includes("combat") || interests.includes("boxing") || interests.includes("kickboxing");
     },
     info: "Dein Alter sagt uns nicht, wie fit du bist. Die Angabe hilft nur, Angebote mit Altersbezug wie Boxing Legends ab 40 zu berücksichtigen. Du kannst weiterhin die regulären Angebote wählen.",
     options: [
@@ -201,6 +197,7 @@ function visibleQuestions() {
 }
 
 function renderStart() {
+  window.Area76Transfer?.reset();
   document.body.classList.remove("result-view", "print-health");
   window.scrollTo({ top: 0, behavior: "auto" });
   state.step = -1;
@@ -216,7 +213,7 @@ function renderStart() {
         <button class="primary-btn hero-cta" id="startBtn">Los geht’s <span aria-hidden="true">→</span></button>
       </div>
       <div class="hero-meta" aria-label="Das erwartet dich">
-        <span>Rund 10 kurze Fragen</span>
+        <span>11–12 kurze Fragen · eine freiwillig</span>
         <span>Persönliche Empfehlung</span>
         <span>Antworten bleiben in diesem Tab</span>
       </div>
@@ -238,6 +235,7 @@ function updateProgress() {
 }
 
 function renderQuestion() {
+  window.Area76Transfer?.reset();
   document.body.classList.remove("result-view", "print-health");
   window.scrollTo({ top: 0, behavior: "auto" });
   const qs = visibleQuestions();
@@ -260,7 +258,7 @@ function renderQuestion() {
           ${q.options.map(([value, label, desc]) => {
             const selected = q.type === "multi" ? current.includes(value) : current === value;
             return `
-              <button type="button" class="option-btn ${selected ? "selected" : ""}" data-value="${value}">
+              <button type="button" class="option-btn ${selected ? "selected" : ""}" data-value="${value}" aria-pressed="${selected}">
                 <span class="option-dot" aria-hidden="true"></span>
                 <span class="option-copy">
                   <strong>${label}</strong>
@@ -279,6 +277,7 @@ function renderQuestion() {
         </aside>
         <div class="question-actions">
           <button class="secondary-btn" id="backBtn">← Zurück</button>
+          ${q.optional ? '<button class="link-btn" id="skipBtn">Überspringen</button>' : ""}
           <button class="primary-btn" id="nextBtn" ${isAnswered(q) ? "" : "disabled"}>${state.step === qs.length - 1 ? "Meinen Start zeigen →" : "Weiter →"}</button>
         </div>
       </div>
@@ -299,6 +298,12 @@ function renderQuestion() {
 
   document.getElementById("nextBtn").onclick = () => {
     if (!isAnswered(q)) return;
+    state.step += 1;
+    renderQuestion();
+  };
+  const skipBtn = document.getElementById("skipBtn");
+  if (q.optional && skipBtn) skipBtn.onclick = () => {
+    delete state.answers[q.id];
     state.step += 1;
     renderQuestion();
   };
@@ -327,6 +332,7 @@ function selectOption(q, value) {
 }
 
 function isAnswered(q) {
+  if (q.optional) return true;
   const a = state.answers[q.id];
   if (q.type === "multi") return Array.isArray(a) && a.length > 0;
   return !!a;
@@ -391,8 +397,7 @@ function add(score, key, val, reason) {
   if (reason && !score[key].reasons.includes(reason)) score[key].reasons.push(reason);
 }
 
-function scorePrograms() {
-  const a = state.answers;
+function scorePrograms(a = state.answers) {
   const s = {};
   Object.keys(programs).forEach(k => s[k] = { points: 0, reasons: [] });
 
@@ -404,9 +409,10 @@ function scorePrograms() {
   const health = a.health;
   const support = a.support;
   const time = a.time || [];
-  const hasCombatInterest = a.combatPreference !== "skip" && (goals.includes("combat") || interests.some(k => ["boxing", "kickboxing"].includes(k)));
+  const hasCombatInterest = goals.includes("combat") || interests.some(k => ["boxing", "kickboxing"].includes(k));
   const age = hasCombatInterest ? a.ageband : undefined;
-  const combat = hasCombatInterest ? a.combatPreference : undefined;
+  const combatInterests = interests.filter(k => ["boxing", "kickboxing"].includes(k));
+  const combat = combatInterests.length === 2 ? "both" : combatInterests[0] === "boxing" ? "hands" : combatInterests[0] === "kickboxing" ? "handsfeet" : undefined;
 
   // Goal weighting
   if (goals.includes("strength")) { add(s,"gym",4,"Du möchtest stärker werden."); add(s,"hybrid",4,"Kraft ist ein zentraler Teil deines Ziels."); }
@@ -464,7 +470,7 @@ function scorePrograms() {
   // Time flexibility
   if (time.includes("shift")) { add(s,"gym",5,"Wechselnde Zeiten sprechen für flexible freie Einheiten."); if (style !== "solo") add(s,"hybrid",1,"Ein Mix aus Kurs und freiem Training kann trotz wechselnder Zeiten funktionieren."); }
 
-  // Combat preference
+  // Combat preference comes from the existing training-interest question.
   if (combat === "hands") { add(s,"boxing",8,"Du bevorzugst Training nur mit den Händen."); add(s,"kickboxing",-3); }
   if (combat === "handsfeet") { add(s,"kickboxing",8,"Du möchtest Hände und Füße einsetzen."); add(s,"boxing",-2); }
   if (combat === "both" || combat === "unsure") { add(s,"boxing",3); add(s,"kickboxing",3); }
@@ -474,7 +480,7 @@ function scorePrograms() {
 
   // Back / yoga / sixpack add-on nuance
   if (interests.includes("sixpack")) add(s,"sixpack",3);
-  if (goals.includes("bodycomp") && Number(a.commitment || 0) >= 3) add(s,"sixpack",1,"Du hast genügend Trainingsfrequenz für eine zusätzliche kurze Core-Einheit.");
+  if (goals.includes("bodycomp") && Number(a.commitment || 0) >= 3) add(s,"sixpack",1,"Ob die kurze Core-Ergänzung in deinen Wochenrahmen passt, besprechen wir gemeinsam – sie kommt nicht automatisch obendrauf.");
 
   // Personal training only on explicit desire
   if (support === "oneone") add(s,"pt",12,"Du wünschst dir ausdrücklich intensive 1:1-Betreuung.");
@@ -493,20 +499,18 @@ function scorePrograms() {
 
 // Studio matching rules, not a clinically validated score. General preferences
 // may order suitable programs, but cannot make an unrelated sport suitable.
-function isRelevantProgram(key) {
-  const a = state.answers;
+function isRelevantProgram(key, a = state.answers) {
   const goals = a.goals || [];
   const interests = a.interests || [];
-  const combat = a.combatPreference !== "skip" && (goals.includes("combat") || interests.some(k => ["boxing", "kickboxing"].includes(k)));
+  const combat = goals.includes("combat") || interests.some(k => ["boxing", "kickboxing"].includes(k));
   if (a.health === "unclear") return false;
   if (key === "pt") return a.support === "oneone";
   if (key === "hyrox") return goals.includes("hyroxgoal") || interests.includes("hyrox");
   if (key === "legends") return combat && ["40to59", "60plus"].includes(a.ageband);
   if (key === "boxing" || key === "kickboxing") {
     if (!combat) return false;
-    if (a.combatPreference === "hands") return key === "boxing";
-    if (a.combatPreference === "handsfeet") return key === "kickboxing";
-    return goals.includes("combat") || interests.includes(key) || a.combatPreference === "both";
+    const explicitCombat = interests.filter(k => ["boxing", "kickboxing"].includes(k));
+    return explicitCombat.length ? explicitCombat.includes(key) : goals.includes("combat");
   }
   if (key === "sixpack") return interests.includes("sixpack");
   if (key === "backclass") return goals.includes("back") || interests.includes("backclass");
@@ -516,59 +520,133 @@ function isRelevantProgram(key) {
 }
 
 function recommendationList() {
-  if (state.answers.health === "unclear") return [];
-  const score = scorePrograms();
-  const sorted = Object.entries(score)
-    .filter(([key, data]) => data.points > 0 && isRelevantProgram(key))
-    .sort((a,b) => b[1].points - a[1].points);
-  const regular = sorted.filter(([key]) => !["pt", "sixpack"].includes(key));
-  const extras = sorted.filter(([key]) => ["pt", "sixpack"].includes(key));
-  // PT and short Core sessions supplement a training basis; never replace it.
-  return [...regular.slice(0, 3 - extras.length), ...extras].slice(0, 3);
+  return createTrainingPlan().recommendations;
 }
 
-function buildMix(recs) {
-  const commitment = parseInt(state.answers.commitment || "2", 10);
-  const keys = recs.map(([k]) => k).filter(k => !["pt", "sixpack"].includes(k));
-  const rows = [];
+// Editorial studio rules, not clinical thresholds or validated effect sizes.
+const planningPolicy = { maxOffersPerWeek: 3 };
+const goalPrograms = {
+  strength: ["gym", "hybrid"], muscle: ["gym", "hybrid"],
+  fitness: ["hybrid", "gym", "hyrox"], endurance: ["hyrox", "hybrid"],
+  bodycomp: ["gym", "hybrid"], mobility: ["yoga", "gym"], back: ["backclass", "gym"],
+  stress: ["yoga", "boxing", "kickboxing"], hyroxgoal: ["hyrox"], combat: ["boxing", "kickboxing"]
+};
 
-  const primary = keys[0];
-  const hasGym = keys.includes("gym");
-  const classKeys = keys.filter(k => ["hybrid","hyrox","boxing","kickboxing","legends","yoga","backclass"].includes(k));
-
-  if (state.answers.health === "unclear") {
-    return [
-      ["1. Schritt", "Trainer-Gespräch vor dem ersten Training"],
-      ["Danach", "Passenden Einstieg gemeinsam festlegen"]
-    ];
+function createTrainingPlan(a = state.answers) {
+  const result = { status: "ready", basis: null, weeks: [], recommendations: [], alternatives: [], notes: [], available: Number(a.commitment), sessions: 0 };
+  if (a.health === "unclear") return { ...result, status: "health" };
+  if (a.guidance === "support") return { ...result, status: "support" };
+  // Fail closed on incomplete/invalid mandatory answers; no silent two-day default.
+  const required = questions.filter(q => !q.optional && !q.conditional);
+  const complete = required.every(q => {
+    const values = q.type === "multi" ? a[q.id] : [a[q.id]];
+    return Array.isArray(values) && values.length > 0 && new Set(values).size === values.length && (!q.max || values.length <= q.max)
+      && !(values.includes("unsure") && values.length > 1) && values.every(value => q.options.some(([key]) => key === value));
+  });
+  if (!complete) return { ...result, status: "incomplete", notes: ["Bitte beantworte zuerst die noch offenen Fragen."] };
+  const score = scorePrograms(a);
+  const interests = a.interests || [];
+  const goals = a.goals || [];
+  const variety = (a.motivation || []).includes("variety");
+  const eligible = Object.keys(programs).filter(key => score[key].points > 0 && isRelevantProgram(key, a));
+  // An age-based alternative must not displace someone's chosen regular course.
+  const pool = eligible.filter(key => !["pt", "sixpack", "legends"].includes(key))
+    .sort((x, y) => score[y].points - score[x].points || x.localeCompare(y));
+  const matchesGoal = key => goals.some(goal => (goalPrograms[goal] || []).includes(key));
+  const sportGoals = goals.filter(goal => ["hyroxgoal", "combat"].includes(goal));
+  const sportPool = pool.filter(key => sportGoals.some(goal => goalPrograms[goal].includes(key)));
+  const basisPool = sportPool.length ? sportPool : pool.filter(matchesGoal);
+  const basis = (basisPool.length ? basisPool : pool)[0];
+  if (!basis) return { ...result, status: "conversation", notes: ["Deine Trainingsbasis legen wir im Gespräch gemeinsam fest."] };
+  result.basis = basis;
+  const available = Number(a.commitment);
+  // Frequency is selected together with staff. Experience must not silently
+  // replace that agreed availability with an arbitrary numerical cap.
+  const sessions = available;
+  result.sessions = sessions;
+  const ordered = [basis, ...pool.filter(key => key !== basis).sort((x, y) =>
+    Number(interests.includes(y)) - Number(interests.includes(x)) || Number(matchesGoal(y)) - Number(matchesGoal(x)) || score[y].points - score[x].points || x.localeCompare(y))];
+  const strengthGoal = goals.some(goal => ["strength", "muscle"].includes(goal));
+  const hasStrength = pool.some(key => ["gym", "hybrid"].includes(key));
+  const maxDistinct = a.experience === "new" ? 2 : planningPolicy.maxOffersPerWeek;
+  const feasible = [];
+  // Enumerate the small, bounded set of integer week allocations. Every returned
+  // week satisfies the same guardrails; variation never bypasses them.
+  function enumerate(index, remaining, entries) {
+    if (index === ordered.length) {
+      if (remaining || !entries.some(e => e.key === basis) || entries.length > maxDistinct) return;
+      const count = key => entries.find(e => e.key === key)?.count || 0;
+      if (strengthGoal && hasStrength && count("gym") + count("hybrid") < Math.min(2, sessions)) return;
+      if (a.style === "mix" && sessions >= 2 && pool.includes("gym") && pool.some(key => key !== "gym") && (!count("gym") || !entries.some(e => e.key !== "gym"))) return;
+      if (a.style === "solo" && pool.includes("gym") && count("gym") < Math.ceil(sessions / 2)) return;
+      if (sportGoals.length <= sessions && sportGoals.some(goal => !entries.some(e => goalPrograms[goal].includes(e.key)))) return;
+      feasible.push(entries);
+      return;
+    }
+    for (let n = 0; n <= remaining; n++) {
+      if (n && entries.length === maxDistinct) continue;
+      enumerate(index + 1, remaining - n, n ? [...entries, { key: ordered[index], count: n }] : entries);
+    }
   }
-
-  if (!keys.length) return [["Gemeinsam", "Deine Trainingsbasis im Gespräch festlegen"]];
-
-  if (primary === "hybrid") {
-    if (commitment === 1) rows.push(["1×", "HYBRID"]);
-    else if (commitment === 2) rows.push(["1–2×", "HYBRID"]);
-    else rows.push(["2×", "HYBRID"]);
-    if (commitment >= 3) rows.push([`${Math.max(1, commitment-2)}×`, "Geräte-/Krafttraining oder passende Ergänzung"]);
-  } else if (primary === "hyrox") {
-    rows.push([commitment >= 3 ? "2×" : "1×", "HYROX"]);
-    if (commitment >= 2) rows.push(["1×", keys.includes("hybrid") ? "HYBRID als Kraftbasis" : "Geräte-/Krafttraining"]);
-    if (commitment >= 4) rows.push(["1×", "flexible zusätzliche Einheit"]);
-  } else if (["boxing","kickboxing","legends"].includes(primary)) {
-    rows.push([commitment >= 2 ? "1–2×" : "1×", programs[primary].title]);
-    if (commitment >= 3) rows.push(["1–2×", "Geräte-/Krafttraining oder HYBRID"]);
-  } else if (primary === "gym") {
-    rows.push([`${Math.max(1, commitment - (classKeys.length ? 1 : 0))}×`, "Geräte-/Krafttraining"]);
-    if (classKeys.length && commitment >= 2) rows.push(["1×", programs[classKeys[0]].title]);
-  } else if (primary === "yoga" || primary === "backclass") {
-    rows.push(["1×", programs[primary].title]);
-    if (commitment >= 2) rows.push([`${commitment-1}×`, "Geräte-/Krafttraining oder weitere passende Einheit"]);
-  } else {
-    rows.push([`${commitment}×`, programs[primary]?.title || "Training"]);
+  enumerate(0, sessions, []);
+  if (!feasible.length) return { ...result, status: "conversation", basis: null, notes: ["Deine Ziele, Trainingsvorlieben und dein Zeitrahmen lassen sich gerade nicht eindeutig zusammenbringen. Lass uns zuerst festlegen, welcher Schwerpunkt beim Einstieg Vorrang hat."] };
+  const signature = entries => entries.map(e => `${e.key}:${e.count}`).sort().join("|");
+  const chosen = [];
+  const modes = variety && sessions > 1 ? (pool.length > 2 ? ["basis", "wechsel", "vielfalt"] : ["basis", "wechsel"]) : ["basis"];
+  for (const mode of modes) {
+    const targetDistinct = Math.min(sessions, pool.length, mode === "vielfalt" ? maxDistinct : 2);
+    const targetBasis = mode === "wechsel" ? Math.max(1, Math.floor(sessions / 2)) : Math.max(1, sessions - targetDistinct + 1);
+    const ranked = feasible.filter(entries => !chosen.some(previous => signature(previous) === signature(entries))
+      && (!chosen.length || entries.length >= chosen[0].length)).map(entries => {
+      const basisCount = entries.find(e => e.key === basis).count;
+      const goalCoverage = goals.filter(goal => entries.some(e => (goalPrograms[goal] || []).includes(e.key))).length;
+      const interestCoverage = entries.filter(e => interests.includes(e.key)).length;
+      const newOffers = entries.filter(e => !chosen.some(previous => previous.some(p => p.key === e.key))).length;
+      const quality = goalCoverage * 60 + interestCoverage * 20 + entries.reduce((sum, e) => sum + score[e.key].points * e.count, 0) / sessions
+        - Math.abs(entries.length - targetDistinct) * 30 - Math.abs(basisCount - targetBasis) * 18
+        + (mode === "vielfalt" ? newOffers * 24 : 0);
+      return { entries, quality };
+    }).sort((x, y) => y.quality - x.quality || signature(x.entries).localeCompare(signature(y.entries)));
+    if (ranked.length) chosen.push(ranked[0].entries);
   }
+  result.weeks = chosen.map((entries, i) => ({
+    label: chosen.length > 1 ? `Woche ${String.fromCharCode(65 + i)}` : "Deine Beispielwoche",
+    entries, rows: entries.map(({key, count}) => [`${count}×`, key === "gym" ? "Freies Training" : programs[key].title])
+  }));
+  const used = [...new Set(chosen.flatMap(entries => entries.map(e => e.key)))];
+  result.recommendations = [...used, ...eligible.filter(key => ["pt", "sixpack"].includes(key))].map(key => [key, score[key]]);
+  result.alternatives = eligible.filter(key => key === "legends" || (interests.includes(key) && !used.includes(key) && !["pt", "sixpack"].includes(key)));
+  if (["new", "return"].includes(a.experience)) result.notes.push("Wir übernehmen die gemeinsam gewählte Trainingshäufigkeit. Gerade beim Einstieg stimmen wir Dauer, Belastung und Erholung mit einem Trainer ab und steigern passend zu deinem aktuellen Stand.");
+  if (strengthGoal) result.notes.push("Dein Kraft- oder Muskelaufbauziel bleibt auch bei wechselnden Wochen im Plan. Die passenden Übungen und den Trainingsumfang legen wir mit dir fest.");
+  if (variety && chosen.length === 1) result.notes.push("Dein Wochenrahmen bleibt bewusst einfach. Abwechslung kannst du mit dem Coach innerhalb der passenden Einheit planen – wir erfinden dafür keine zusätzlichen Trainingstage.");
+  if ((a.time || []).includes("shift")) result.notes.push("Deine Zeiten wechseln. Wir prüfen passende Kursplätze und eine Ersatzlösung mit dir; das Tool kennt keine freien Termine.");
+  const uncovered = goals.filter(goal => !chosen.some(entries => entries.some(e => (goalPrograms[goal] || []).includes(e.key))));
+  if (uncovered.length) result.notes.push("Nicht alle deine Ziele sind im ersten Wochenvorschlag abgedeckt. Lass uns gemeinsam priorisieren, statt immer mehr Einheiten hinzuzufügen.");
+  if (sportGoals.length > sessions) result.notes.push("Für mehrere Sportziele ist dein aktueller Wochenrahmen knapp. Welcher Schwerpunkt zuerst kommt, entscheiden wir gemeinsam.");
+  result.notes.push("Die Einheiten sind noch keine Vorgabe für Intensität, Dauer oder Trainingstage. Belastung, Erholung und Kursverfügbarkeit stimmen wir vor dem Start ab.");
+  return result;
+}
 
-  if (recs.some(([key]) => key === "sixpack") && commitment >= 3) rows.push(["optional", "Seventy Sixpack als 30-min Core-Add-on"]);
-  return rows.slice(0,4);
+function buildWeeklyPlan() { return createTrainingPlan().weeks; }
+
+function buildMix() {
+  if (state.answers.health === "unclear") return [
+    ["1. Schritt", "Trainer-Gespräch vor dem ersten Training"],
+    ["Danach", "Passenden Einstieg gemeinsam festlegen"]
+  ];
+  return buildWeeklyPlan()[0]?.rows || [["Gemeinsam", "Deine Trainingsbasis im Gespräch festlegen"]];
+}
+
+function weeklyPrograms(weeks) {
+  const score = scorePrograms();
+  return [...new Set(weeks.flatMap(week => week.entries.map(entry => entry.key)))].map(key => [key, score[key]]);
+}
+
+function renderMixRows(rows, healthWarning = false) {
+  return `<div class="mix-display">${rows.map(([n, text], i) => `
+    ${i ? `<span class="mix-plus" aria-hidden="true">${healthWarning ? "→" : "+"}</span>` : ""}
+    <div class="mix-item ${n.length > 5 ? "mix-item-guidance" : ""}"><strong>${n}</strong><span>${displayMixText(text)}</span></div>
+  `).join("")}</div>`;
 }
 
 function nextSteps(recs) {
@@ -608,7 +686,7 @@ function labelForRank(i, key) {
   if (["pt", "sixpack"].includes(key)) return "Optional für dich";
   if (i === 0) return "Deine Basis";
   if (i === 1 && key !== "sixpack") return "Deine Ergänzung";
-  return "Optional für dich";
+  return (state.answers.motivation || []).includes("variety") ? "Deine Abwechslung" : "Weitere Ergänzung";
 }
 
 function displayMixText(text) {
@@ -626,8 +704,7 @@ const evidenceSources = [
 ];
 
 function chosenPrograms() {
-  const keys = (state.answers.interests || []).filter(key => programs[key] &&
-    !(state.answers.combatPreference === "skip" && ["boxing", "kickboxing"].includes(key)));
+  const keys = (state.answers.interests || []).filter(key => programs[key]);
   if (state.answers.support === "oneone") keys.push("pt");
   return keys.map(key => [key, { reasons: [] }]);
 }
@@ -639,19 +716,15 @@ function answerLabels(q) {
 }
 
 function renderChoice() {
-  const skippedCombat = state.answers.combatPreference === "skip" && visibleQuestions().some(q => q.id === "combatPreference");
   const interests = questions.find(q => q.id === "interests").options
-    .filter(([key]) => (state.answers.interests || []).includes(key) && !(skippedCombat && ["boxing", "kickboxing"].includes(key)))
+    .filter(([key]) => (state.answers.interests || []).includes(key))
     .map(([, label]) => label);
-  const goals = answerLabels(questions.find(q => q.id === "goals"));
   const undecided = !chosenPrograms().some(([key]) => key !== "pt");
   return `<section class="choice-section" aria-labelledby="choiceTitle">
     <div class="section-kicker">DEINE ZIELE. DEINE INTERESSEN.</div>
     <h2 id="choiceTitle">Das ist deine Wahl.</h2>
     <p class="section-lead">${undecided ? "Bei den Angeboten bist du noch offen. Deine Ziele geben uns Orientierung." : "Diese Angebote sprechen dich an. Das ist dein Ausgangspunkt, noch kein fester Trainingsplan."}</p>
     <div class="choice-offers">${interests.map(label => `<span>${label}</span>`).join("")}</div>
-    ${skippedCombat ? "<p>Kampfsport hast du anschließend übersprungen. Wir berücksichtigen ihn für deinen Einstieg nicht weiter.</p>" : ""}
-    <p><strong>Das möchtest du erreichen:</strong> ${goals.join(" · ")}</p>
     ${state.answers.support === "oneone" ? `<p>Du wünschst dir zusätzlich intensive 1:1-Betreuung. Personal Training ist eine kostenpflichtige Zusatzoption.</p>` : ""}
   </section>`;
 }
@@ -694,7 +767,7 @@ function foundationBlocks(a = state.answers) {
     "Krafttraining unterstützt den Muskelaufbau. Das ist ein Baustein für dein Ziel; aus den Antworten lässt sich keine bestimmte Gewichts- oder Körperfettveränderung vorhersagen.", [2]));
   if (hasGoal("stress")) goalBlocks.push(block("balance", "Ein Ausgleich, der zu dir passt", "Training soll dir Ausgleich geben",
     "Plane eine Einheit, auf die du dich freuen kannst. Ob ruhig oder aktiv: Besprich mit uns, was dir gefällt und welcher Termin gut in deinen Alltag passt."));
-  if (a.combatPreference !== "skip" && (hasGoal("combat") || hasInterest("boxing", "kickboxing"))) goalBlocks.push(block("combat", "Deinen Kampfsportstart besprechen", "Du interessierst dich für Kampfsport",
+  if (hasGoal("combat") || hasInterest("boxing", "kickboxing")) goalBlocks.push(block("combat", "Deinen Kampfsportstart besprechen", "Du interessierst dich für Kampfsport",
     "Sag dem Coach vor der ersten Einheit, welche Erfahrung du mitbringst. Klärt gemeinsam Kursablauf, Ausrüstung und deinen Einstieg. Du musst noch keine bestimmte Technik beherrschen."));
 
   if (["new", "return"].includes(a.experience)) routineBlocks.push(block("start", a.experience === "return" ? "Schrittweise wieder einsteigen" : "Dein Einstieg darf einfach sein", a.experience === "return" ? "Du steigst nach einer Pause wieder ein" : "Du startest neu",
@@ -758,10 +831,144 @@ function renderAnswerSummary() {
     <h2 id="summaryTitle">Deine Antworten.</h2>
     <dl class="answer-list">${visibleQuestions().map((q, index) => `
       <div class="answer-row ${q.id === "health" ? "health-answer" : ""}">
-        <dt>${q.title}</dt><dd>${answerLabels(q).join(" · ") || "Noch nicht beantwortet"}</dd>
+        <dt>${q.title}</dt><dd>${answerLabels(q).join(" · ") || (q.optional ? "Keine Angabe – freiwillig" : "Noch nicht beantwortet")}</dd>
         <button class="link-btn answer-edit" data-step="${index}" aria-label="Antwort ändern: ${q.title}">Ändern</button>
       </div>`).join("")}</dl>
   </section>`;
+}
+
+function renderPersonalSummary(plan = createTrainingPlan()) {
+  const a = state.answers;
+  const goalText = {
+    strength: "stärker werden", muscle: "Muskeln aufbauen", fitness: "allgemein fitter werden",
+    endurance: "deine Ausdauer verbessern", bodycomp: "deine Körperkomposition verändern",
+    mobility: "beweglicher werden", back: "deinen Rücken stärken", stress: "einen Ausgleich zum Alltag finden",
+    hyroxgoal: "für HYROX trainieren", combat: "Boxen oder Kickboxen lernen"
+  };
+  const goals = (a.goals || []).map(key => goalText[key]).filter(Boolean);
+  const joinedGoals = goals.length > 1 ? `${goals.slice(0, -1).join(", ")} und ${goals.at(-1)}` : goals[0];
+  const experience = {
+    new: "Du startest neu. Wir besprechen einen Einstieg, bei dem du dich orientieren kannst.",
+    return: "Du steigst wieder ein. Wir knüpfen an deine Erfahrung an und besprechen deinen Neustart.",
+    lt1: "Du bringst erste Trainingserfahrung mit. Darauf bauen wir gemeinsam auf.",
+    "1to3": "Du bringst regelmäßige Trainingserfahrung mit. Dein Einstieg soll daran anknüpfen.",
+    "3plus": "Du bringst viel Trainingserfahrung mit. Deine bisherigen Erfahrungen nehmen wir mit in die Planung."
+  };
+  const rhythm = { "1": "1×", "2": "2×", "3": "3×", "4": "4×", "5": "5× oder öfter" };
+  const support = { normal: "Reguläre Betreuung", some: "Mehr Rückmeldung", oneone: "Intensive 1:1-Betreuung" };
+  const wantsAdvice = a.guidance === "advice";
+  const healthWarning = a.health === "unclear";
+  const weeks = plan.weeks;
+  const weekText = weeks.length ? weeks.map(week => `<span class="summary-week">${weeks.length > 1 ? `<small>${week.label}</small>` : ""}${week.rows.map(([count, title]) => `${count} ${title}`).join(" + ")}</span>`).join("") : "Deine Trainingsbasis gemeinsam festlegen";
+  const ownChoice = chosenPrograms().filter(([key]) => !["pt", "sixpack"].includes(key)).map(([key]) => programs[key].title).join(" + ");
+  return `<div class="personal-summary">
+    <p class="personal-goals">${joinedGoals ? `Du möchtest ${joinedGoals}.` : "Deine Ziele sind unser Ausgangspunkt."}</p>
+    <p class="personal-context">${experience[a.experience] || "Deinen Einstieg besprechen wir gemeinsam."}</p>
+    <dl class="start-facts">
+      <div><dt>Dein Rhythmus</dt><dd>${rhythm[a.commitment] || "Noch offen"}<small>pro Woche eingeplant</small></dd></div>
+      <div><dt>${healthWarning ? "Dein erster Schritt" : wantsAdvice ? "Dein Wochenvorschlag" : "Deine gewählten Angebote"}</dt><dd>${healthWarning ? "Zuerst ein Trainer-Gespräch" : wantsAdvice ? weekText : ownChoice || "Gemeinsam auswählen"}<small>${healthWarning ? "Training erst nach der Klärung planen" : wantsAdvice ? "Gemeinsam abstimmen · noch kein fester Kursplan" : "Die Häufigkeit legen wir gemeinsam fest"}</small></dd></div>
+      <div><dt>Deine Begleitung</dt><dd>${support[a.support] || "Noch offen"}${a.support === "oneone" ? "<small>PT ist eine kostenpflichtige Zusatzoption</small>" : ""}</dd></div>
+    </dl>
+  </div>`;
+}
+
+function firstVisit(recs) {
+  if (state.answers.health === "unclear") return {
+    title: "Dein erster Besuch: erst ins Gespräch.",
+    lead: "Bevor wir Training planen, klären wir gemeinsam die nächsten Schritte. Eine nötige medizinische Abklärung ersetzt das Gespräch im Studio nicht.",
+    steps: [
+      ["Gespräch vereinbaren", "Sprich uns auf ein Trainer-Gespräch vor deinem ersten Training an."],
+      ["Fragen mitbringen", "Was möchtest du erreichen, was ist noch unklar? Medizinische Details musst du hier nicht eintragen."],
+      ["Danach weiterplanen", "Erst nach der Klärung legen wir passende Angebote und den Einstieg fest."]
+    ]
+  };
+  const keys = recs.map(([key]) => key);
+  const primary = keys.find(key => !["pt", "sixpack"].includes(key));
+  const intro = {
+    gym: ["Den Kraftbereich kennenlernen", "Lass dir den Geräte- und Kraftbereich zeigen. Besprich mit einem Trainer, für welche Geräte und Übungen du eine Einweisung brauchst."],
+    hybrid: ["HYBRID kennenlernen", "Lass dir den Functional-Bereich zeigen und den Ablauf erklären: Krafttraining mit ergänzendem Conditioning."],
+    hyrox: ["HYROX kennenlernen", "Lass dir den Functional-Bereich und den Kursablauf erklären. Besprich mit dem Coach deine Erfahrung und deinen Einstieg."],
+    boxing: ["Deinen Boxstart besprechen", "Lass dir den Kampfsportbereich zeigen. Kläre mit dem Coach den Kursablauf und welche Ausrüstung du brauchst."],
+    kickboxing: ["Deinen Kickboxstart besprechen", "Lass dir den Kampfsportbereich zeigen. Kläre mit dem Coach den Kursablauf und welche Ausrüstung du brauchst."],
+    legends: ["Boxing Legends kennenlernen", "Schau dir mit uns den Kampfsportbereich an. Besprich Kursablauf und Ausrüstung; auch die regulären Angebote bleiben eine Möglichkeit."],
+    yoga: ["Deinen Yoga-Einstieg besprechen", "Schau mit uns nach einem passenden Kurs. Kläre Ablauf und benötigte Ausstattung, bevor du teilnimmst."],
+    backclass: ["Rückengymnastik kennenlernen", "Lass dir den Kurs erklären und besprich mit dem Coach dein Ziel und deine Erfahrung."]
+  };
+  const ease = {
+    appointment: ["Deinen ersten Termin finden", "Du möchtest einen festen Termin. Schau mit uns, was in deinen Alltag passt und wie du die erste Einheit vereinbarst oder buchst."],
+    intro: ["Die Einweisung absprechen", "Du möchtest zuerst Sicherheit im Ablauf. Kläre mit uns, welche Einweisung du brauchst und wann sie stattfinden kann."],
+    company: ["Deine Begleitung besprechen", "Du möchtest nicht allein starten. Besprich mit uns, welche Begleitung beim ersten Besuch möglich ist. Das ist keine automatische Buchung von Personal Training."],
+    explore: ["Erst einmal orientieren", "Du möchtest uns in Ruhe kennenlernen. Lass dir die Bereiche zeigen und kläre, welche Möglichkeiten zum Kennenlernen es gibt."],
+    none: ["Den Einstieg konkret machen", "Du fühlst dich startklar. Kläre noch deinen ersten Termin und gegebenenfalls die Kursbuchung."]
+  };
+  return {
+    title: "So kann dein erster Besuch aussehen.",
+    lead: "Ein Vorschlag für unser Gespräch – noch kein gebuchter Termin. Den Ablauf stimmen wir vor Ort mit dir ab.",
+    steps: [
+      ease[state.answers.startEase] || ["Kurz miteinander sprechen", "Sprich uns im Studio an und zeig uns auf Wunsch diese Zusammenfassung. So können wir an deinen Antworten anknüpfen."],
+      intro[primary] || ["Deine Möglichkeiten anschauen", "Lass dir die Bereiche zeigen, die dich interessieren. Gemeinsam klären wir deine Fragen und den passenden Einstieg."],
+      ["Für die erste Einheit vorbereiten", `${keys.some(key => !["gym", "pt"].includes(key)) ? "Schau mit uns in den aktuellen Kursplan und lass dir die Buchung erklären. " : ""}Kläre vorab, welche Kleidung, Schuhe und gegebenenfalls Ausrüstung du brauchst.${keys.includes("pt") ? " Umfang und Kosten für Personal Training besprechen wir separat." : ""}`]
+    ]
+  };
+}
+
+function renderFirstVisit(recs) {
+  const visit = firstVisit(recs);
+  return `<section class="first-visit" aria-labelledby="visitTitle">
+    <div class="section-kicker">VOM VORSCHLAG ZUM ERSTEN SCHRITT</div>
+    <h2 id="visitTitle">${visit.title}</h2>
+    <p class="section-lead">${visit.lead}</p>
+    <ol class="visit-steps">${visit.steps.map(([title, text], i) => `<li>
+      <span class="visit-number" aria-hidden="true">0${i + 1}</span><h3>${title}</h3><p>${text}</p>
+    </li>`).join("")}</ol>
+  </section>`;
+}
+
+function renderPlanReasoning(plan) {
+  if (plan.status !== "ready" || !plan.basis) return "";
+  const motivations = state.answers.motivation || [];
+  return `<div class="plan-reasoning">
+    <article><span class="reason-number">01</span><h3>Ein Ziel. Eine Basis.</h3>
+      <p>${programs[plan.basis].title} ist dein Ausgangspunkt. ${scorePrograms()[plan.basis].reasons[0] || "Wir berücksichtigen deine Ziele und Trainingsvorlieben."}</p></article>
+    <article><span class="reason-number">02</span><h3>Dein Alltag zählt.</h3>
+      <p>${plan.sessions} ${plan.sessions === 1 ? "Einheit" : "Einheiten"} pro Woche ${plan.sessions === 1 ? "gibt" : "geben"} den Rahmen vor. Wir verteilen deine Zeit – wir packen keine zusätzlichen Trainingstage obendrauf.</p></article>
+    <article><span class="reason-number">03</span><h3>${plan.weeks.length > 1 ? "Abwechslung mit Richtung." : "Ein Start, der übersichtlich bleibt."}</h3>
+      <p>${plan.weeks.length > 1 ? "Du hast Abwechslung gewählt. Deshalb wechseln Ergänzungen oder Häufigkeiten. Deine Basis bleibt in jeder Woche dabei." : motivations.includes("variety") ? "Für deinen aktuellen Rahmen gibt es keinen weiteren gleich gut passenden Wochenwechsel. Abwechslung bleibt innerhalb der Einheiten möglich." : "Du hast keinen Wochenwechsel gewünscht. Deshalb bekommst du einen klaren, wiederholbaren Vorschlag."}</p></article>
+  </div>`;
+}
+
+// A plain-text snapshot of the EXISTING result, never a second recommendation engine.
+// No health answer, health-specific explanation, member identity, or free-text input.
+function buildMagiclineSections() {
+  const plan = createTrainingPlan();
+  const stopped = state.answers.health === "unclear";
+  const advice = state.answers.guidance === "advice";
+  const labels = id => answerLabels(questions.find(q => q.id === id)).join(" · ");
+  const section = (title, lines) => ({ title, lines: lines.filter(Boolean) });
+  const recs = advice ? plan.recommendations : chosenPrograms();
+  const sections = [
+    section("Dein Start in der Area", ["Deine Ziele: " + labels("goals"), "Dein Rhythmus: " + labels("commitment"), "Deine Erfahrung: " + labels("experience")]),
+    section("Das ist deine Wahl", [labels("interests"), "Deine Begleitung: " + labels("support"), state.answers.support === "oneone" ? "Personal Training ist eine kostenpflichtige Zusatzoption." : "Reguläre Trainingsangebote sind in der Mitgliedschaft enthalten."]),
+    section("Unser Wochenvorschlag", plan.weeks.length ? [
+      ...plan.weeks.map(w => w.label + ": " + w.rows.map(([count, title]) => count + " " + title).join(" + ")),
+      ...plan.notes
+    ] : [advice ? "Den Trainingsstart legen wir zuerst im persönlichen Gespräch fest. Diese Auswertung enthält keinen Trainingsplan und keine Belastungsfreigabe." : "Du möchtest Unterstützung bei deiner Wahl. Es wurde keine zusätzliche Trainingsempfehlung angefordert."])
+  ];
+  if (!stopped && advice && recs.length) sections.push(section("Warum das zu dir passt", recs.flatMap(([key, data], i) => [
+    labelForRank(i, key) + ": " + programs[key].title + (programs[key].included ? " (inklusive)" : " (kostenpflichtige Zusatzoption)"),
+    programs[key].desc, data.reasons.slice(0, 3).join(" ")
+  ])));
+  if (!stopped) {
+    const visit = firstVisit(recs);
+    sections.push(section("Dein erster Besuch", [visit.lead, ...visit.steps.map(([title, text]) => title + ": " + text)]));
+    const blocks = foundationBlocks().filter(b => b.id !== "limits");
+    sections.push(section("Gut zu wissen", blocks.map(b => b.title + ": " + b.text + b.sources.map(id => " [" + id + "]").join(""))));
+    const ids = [...new Set(blocks.flatMap(b => b.sources))].sort();
+    if (ids.length) sections.push(section("Quellen & Einordnung", ["Redaktionelle Beratungshilfe, kein wissenschaftlich validierter Test. Quellenstand: 29.09.2026.", ...ids.map(id => "[" + id + "] " + evidenceSources[id - 1].join(" - "))]));
+  }
+  sections.push(section("Deine Antworten", visibleQuestions().filter(q => q.id !== "health").map(q => q.title + "\n" + (answerLabels(q).join(" · ") || "Keine Angabe - freiwillig"))));
+  sections.push(section("Bevor du loslegst", stopped ? ["Deinen Einstieg persönlich mit einem Trainer abstimmen. Bis dahin enthält diese Auswertung keine Trainingsempfehlung."] : nextSteps(recs)));
+  return sections;
 }
 
 function renderResults() {
@@ -769,23 +976,26 @@ function renderResults() {
   progressWrap.hidden = true;
   resetBtn.hidden = false;
   const wantsAdvice = state.answers.guidance === "advice";
-  const recs = wantsAdvice ? recommendationList() : [];
-  const mix = buildMix(recs);
+  const plan = createTrainingPlan();
+  const weeks = plan.weeks;
+  const recs = plan.recommendations;
+  const mix = buildMix();
   const steps = nextSteps(wantsAdvice ? recs : chosenPrograms());
   const healthWarning = state.answers.health === "unclear";
 
   app.innerHTML = `
     <section class="results-screen">
+      <section class="result-overview" aria-label="Dein Start auf einen Blick">
       <div class="results-head">
         <div>
           <div class="eyebrow">DEIN PERSÖNLICHER EINSTIEG</div>
           <h1>Dein Start<br>in der Area.</h1>
-          <p>Wir haben deine Ziele, deine Erfahrung und deinen Alltag berücksichtigt.</p>
+          <p>Dein Ziel. Dein Alltag. Dein Weg in die Area.</p>
         </div>
         <button class="secondary-btn" id="adjustBtn">Antworten anpassen</button>
       </div>
 
-      ${renderChoice()}
+      ${renderPersonalSummary(plan)}
 
       ${healthWarning ? `
         <div class="health-alert">
@@ -793,21 +1003,37 @@ function renderResults() {
           Du hast angegeben, dass aktuell eine gesundheitliche Einschränkung besteht und du nicht sicher bist, was du belasten darfst. Deshalb empfehlen wir vor dem ersten Training ein kurzes Trainer-Gespräch. Danach kann der passende Einstieg gemeinsam festgelegt werden.
         </div>` : ""}
 
-      ${wantsAdvice || healthWarning ? `<section class="mix-stage">
+      ${renderChoice()}
+
+      ${wantsAdvice || healthWarning ? `<section class="mix-stage ${weeks.length > 1 ? "rotating" : ""}">
         <div class="section-kicker">${healthWarning ? "DEIN ERSTER SCHRITT" : "UNSERE EMPFEHLUNG · DEIN WOCHENSTART"}</div>
-        <h2>${healthWarning ? "Zuerst gemeinsam klären." : "Unsere Empfehlung."}</h2>
-        <div class="mix-display">
-          ${mix.map(([n, text], i) => `
-            ${i ? `<span class="mix-plus" aria-hidden="true">${healthWarning ? "→" : "+"}</span>` : ""}
-            <div class="mix-item ${n.length > 5 ? "mix-item-guidance" : ""}"><strong>${n}</strong><span>${displayMixText(text)}</span></div>
-          `).join("")}
-        </div>
+        <h2>${healthWarning ? "Zuerst gemeinsam klären." : weeks.length ? "Dein Mix. Dein Rhythmus." : "Lass uns deinen Fokus finden."}</h2>
+        ${weeks.length ? `<div class="plan-tags"><span>${plan.sessions} ${plan.sessions === 1 ? "Einheit" : "Einheiten"} pro Woche</span><span>${weeks.length > 1 ? "Wechselnde Wochen · gleiche Basis" : "Ein klarer Wochenrhythmus"}</span></div>` : ""}
+        ${weeks.length > 1 ? `<p class="rotation-intro">Du wünschst dir Abwechslung. So könnten sich deine Wochen abwechseln – mit konkreten Angeboten und wechselnden Schwerpunkten.</p>` : ""}
+        ${weeks.length ? weeks.map(week => `<section class="mix-week" aria-label="${week.label}">
+          ${weeks.length > 1 ? `<h3><span>Woche</span>${week.label.at(-1)}</h3>` : ""}${renderMixRows(week.rows)}
+        </section>`).join("") : renderMixRows(mix, healthWarning)}
         <p>${healthWarning ? "Bis zur Klärung geben wir keine Trainingsempfehlung aus." : "Ein Vorschlag auf Basis deiner Antworten – kein starrer Wochenplan. Den Kursplan prüfen wir gemeinsam."}</p>
+        ${weeks.some(week => week.entries.some(entry => entry.key === "gym")) ? "<p>Freies Training meint den Geräte- und Kraftbereich. Übungen und Einweisung stimmen wir mit dir ab.</p>" : ""}
+        ${plan.sessions === 5 && weeks.length ? "<p>Hier zeigen wir ein Beispiel mit fünf Einheiten. Ob mehr sinnvoll und machbar ist, besprechen wir gemeinsam.</p>" : ""}
       </section>` : `<section class="support-stage"><div class="section-kicker">WIR UNTERSTÜTZEN DEINE WAHL</div>
         <h2>Dein Weg. Gemeinsam starten.</h2>
         <p>Wir schauen uns deine ausgewählten Angebote an, klären deine Fragen und planen die ersten Schritte mit dir.${chosenPrograms().length ? "" : " Da du bei den Angeboten noch offen bist, wählen wir sie im Gespräch gemeinsam aus."}</p>
         <button class="secondary-btn" id="showAdviceBtn">Ich möchte doch eine Empfehlung</button>
       </section>`}
+      ${plan.notes.length ? `<aside class="plan-notes" aria-label="Für unser Gespräch"><strong>Gemeinsam feinjustieren.</strong><ul>${plan.notes.map(note => `<li>${note}</li>`).join("")}</ul></aside>` : ""}
+      </section>
+
+      ${renderFirstVisit(wantsAdvice ? recs : chosenPrograms())}
+
+      <section class="why-section" aria-labelledby="whyTitle">
+        <div class="why-heading">
+          <div class="section-kicker">DIE GEDANKEN HINTER DEINEM START</div>
+          <h2 id="whyTitle">Warum.</h2>
+          <p class="section-lead">${healthWarning ? "Warum wir zuerst die offenen Fragen klären – und deine Ziele trotzdem im Blick behalten." : wantsAdvice ? "Hier siehst du, wie deine Antworten zu unserem Vorschlag führen und welche Grundlagen wir mitdenken." : "Deine Wahl bleibt deine Wahl. Diese Grundlagen helfen uns, deinen Einstieg gemeinsam zu gestalten."}</p>
+        </div>
+
+      ${renderPlanReasoning(plan)}
 
       ${wantsAdvice && !healthWarning ? `<section class="recommendation-section">
         <div class="section-kicker">DEIN TRAININGSWEG</div>
@@ -831,7 +1057,11 @@ function renderResults() {
         </div>
       </section>` : ""}
 
+      ${plan.alternatives.length ? `<section class="plan-alternatives"><h3>Auch möglich – ohne deine Woche voller zu machen.</h3><p>Diese Angebote kannst du mit uns als Austauschoption besprechen. Sie sind keine zusätzlichen Pflichttermine.</p>
+        <ul>${plan.alternatives.map(key => `<li><strong>${programs[key].title}</strong> — ${key === "legends" ? "Das Angebot ab 40 ist eine Alternative zu regulärem Boxen oder Kickboxen, keine automatische Alterszuordnung." : "Du hast Interesse daran. Wir besprechen, welche Einheit es bei Bedarf ersetzen kann."}</li>`).join("")}</ul></section>` : ""}
+
       ${renderFoundations()}
+      </section>
       ${renderAnswerSummary()}
 
       <section class="sop-card">
@@ -857,6 +1087,14 @@ function renderResults() {
         </div>
         <button class="secondary-btn" id="exportBtn">PDF / Drucken ↓</button>
       </section>
+      <section class="magicline-panel" aria-labelledby="magiclineTitle">
+        <div class="section-kicker">FÜR UNSER TEAM · SANDBOX</div>
+        <h2 id="magiclineTitle">Beim Mitglied hinterlegen.</h2>
+        <p>Übernimmt diese Auswertung als PDF: Ziele, Trainingsvorschlag, Betreuung, Grundlagen und Antworten – ohne Gesundheitsantwort und zugehörige Hinweise. Im nächsten Schritt wählst du das Mitglied und bestätigst die Ablage.</p>
+        <p class="export-help">Testbetrieb: Bitte ausschließlich erfundene Fragebogenantworten verwenden. Die Übergabe geht an unseren geschützten Dienst auf api.gladiator76.de und nach Bestätigung an die Magicline-Sandbox. Eine abgelegte PDF bleibt nach „Neu starten“ erhalten.</p>
+        <button class="primary-btn" id="magiclineBtn" type="button">In Magicline ablegen →</button>
+        <p id="magiclineStatus" role="status" aria-live="polite"></p>
+      </section>
     </section>
   `;
 
@@ -869,6 +1107,7 @@ function renderResults() {
     document.body.classList.toggle("print-health", event.target.checked);
   };
   document.getElementById("exportBtn").onclick = () => window.print();
+  window.Area76Transfer?.bind(buildMagiclineSections);
   const showAdviceBtn = document.getElementById("showAdviceBtn");
   if (showAdviceBtn) showAdviceBtn.onclick = () => { state.answers.guidance = "advice"; renderResults(); };
   document.querySelectorAll('.foundations a[href^="#source-"]').forEach(link => {

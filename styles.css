@@ -21,6 +21,16 @@
 .magicline-panel { margin-top: 44px; padding: 38px 0; border-top: 1px solid var(--line); max-width: 920px; }
 .magicline-panel h2 { font-size: clamp(28px,4vw,42px); letter-spacing: -.04em; margin: 12px 0; }
 .magicline-panel p { line-height: 1.6; }
+.manual-notes { margin-top: 32px; padding-top: 28px; border-top: 2px solid var(--gold); }
+.manual-notes h3 { margin: 12px 0; font-size: clamp(24px,3vw,32px); letter-spacing: -.03em; }
+.manual-notes .section-kicker { color: var(--gold); }
+.manual-note-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 28px; margin-top: 24px; }
+.manual-note { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.manual-note label { font-weight: 700; }
+.manual-note textarea { width: 100%; min-height: 150px; resize: vertical; padding: 16px; border: 1px solid var(--line); border-radius: 6px; background: #fff; color: var(--text); font: inherit; font-size: 16px; line-height: 1.55; }
+.manual-note button { align-self: flex-start; margin-top: auto; }
+.manual-note textarea:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+@media (max-width: 700px) { .manual-note-grid { grid-template-columns: 1fr; } }
 @media print { .magicline-panel { display: none !important; } }
 html { min-height: 100%; background: var(--bg); }
 body {

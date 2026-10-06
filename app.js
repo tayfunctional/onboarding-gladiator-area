@@ -971,6 +971,20 @@ function buildMagiclineSections() {
   return sections;
 }
 
+// Manual drafts only, based on the explicit care answer — never inferred from
+// health, age, training goals or a wish to be accompanied on the first visit.
+function buildMagiclineNotes() {
+  if (state.answers.support === "some") return [
+    "Das Mitglied wünscht zusätzliche Betreuung und häufiger Rückmeldung.",
+    "Bitte Mitgliedercode „Betreuung+“ einpflegen."
+  ];
+  if (state.answers.support === "oneone") return [
+    "Das Mitglied wünscht sich intensive 1:1-Betreuung. Interesse an Personal Training, keine Buchung.",
+    "Bitte Mitgliedercode „1:1-Interesse“ einpflegen."
+  ];
+  return [];
+}
+
 function renderResults() {
   window.scrollTo({ top: 0, behavior: "auto" });
   progressWrap.hidden = true;
@@ -1094,6 +1108,25 @@ function renderResults() {
         <p class="export-help">Testbetrieb: Bitte ausschließlich erfundene Fragebogenantworten verwenden. Die Übergabe geht an unseren geschützten Dienst auf api.gladiator76.de und nach Bestätigung an die Magicline-Sandbox. Eine abgelegte PDF bleibt nach „Neu starten“ erhalten.</p>
         <button class="primary-btn" id="magiclineBtn" type="button">In Magicline ablegen →</button>
         <p id="magiclineStatus" role="status" aria-live="polite"></p>
+        <section id="magiclineNotes" class="manual-notes" aria-labelledby="magiclineNotesTitle" hidden>
+          <div class="section-kicker">NOCH MANUELL ZU ERLEDIGEN</div>
+          <h3 id="magiclineNotesTitle">Zwei Info-Notizen für Magicline.</h3>
+          <p>Nur die PDF wurde abgelegt. Prüfe das richtige Mitglied und füge diese Texte dort jeweils als neue Notiz der Art „Info“ ein. Der Mitgliedercode muss ebenfalls manuell zugewiesen werden.</p>
+          <div class="manual-note-grid">
+            <div class="manual-note">
+              <label for="magiclineNote0">1 · Betreuungswunsch</label>
+              <textarea id="magiclineNote0" rows="4" readonly spellcheck="false"></textarea>
+              <button id="copyMagiclineNote0" class="secondary-btn" type="button">Betreuungswunsch kopieren</button>
+            </div>
+            <div class="manual-note">
+              <label for="magiclineNote1">2 · Mitgliedercode einpflegen</label>
+              <textarea id="magiclineNote1" rows="4" readonly spellcheck="false"></textarea>
+              <button id="copyMagiclineNote1" class="secondary-btn" type="button">Code-Hinweis kopieren</button>
+            </div>
+          </div>
+          <p id="magiclineCopyStatus" role="status" aria-live="polite"></p>
+          <p class="export-help">Kopieren speichert keine Notiz in Magicline. Kopierte Texte bleiben auch nach „Neu starten“ in der Zwischenablage.</p>
+        </section>
       </section>
     </section>
   `;
@@ -1107,7 +1140,7 @@ function renderResults() {
     document.body.classList.toggle("print-health", event.target.checked);
   };
   document.getElementById("exportBtn").onclick = () => window.print();
-  window.Area76Transfer?.bind(buildMagiclineSections);
+  window.Area76Transfer?.bind(buildMagiclineSections, buildMagiclineNotes);
   const showAdviceBtn = document.getElementById("showAdviceBtn");
   if (showAdviceBtn) showAdviceBtn.onclick = () => { state.answers.guidance = "advice"; renderResults(); };
   document.querySelectorAll('.foundations a[href^="#source-"]').forEach(link => {

@@ -88,9 +88,9 @@
     } else if (event.data.type === "area76-received") {
       status("Auswertung übernommen. Wähle im Übergabefenster das richtige Mitglied.");
     } else if (event.data.type === "area76-saved") {
-      stop(); status("PDF-Ablage in der Magicline-Sandbox bestätigt. Es wurde keine Notiz angelegt.");
+      stop(); status("PDF-Ablage in Magicline bestätigt. Es wurde keine Notiz angelegt.");
       showNotes();
-      if (notesVisible) status("PDF-Ablage in der Magicline-Sandbox bestätigt. Die zwei Info-Notizen unten sind zum Kopieren bereit, aber noch nicht in Magicline gespeichert.");
+      if (notesVisible) status("PDF-Ablage in Magicline bestätigt. Die zwei Info-Notizen unten sind zum Kopieren bereit, aber noch nicht in Magicline gespeichert.");
     }
   });
   window.addEventListener("pagehide", () => window.Area76Transfer.reset());

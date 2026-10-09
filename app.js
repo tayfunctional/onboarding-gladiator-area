@@ -1102,10 +1102,10 @@ function renderResults() {
         <button class="secondary-btn" id="exportBtn">PDF / Drucken ↓</button>
       </section>
       <section class="magicline-panel" aria-labelledby="magiclineTitle">
-        <div class="section-kicker">FÜR UNSER TEAM · SANDBOX</div>
+        <div class="section-kicker">FÜR UNSER TEAM · MAGICLINE</div>
         <h2 id="magiclineTitle">Beim Mitglied hinterlegen.</h2>
         <p>Übernimmt diese Auswertung als PDF: Ziele, Trainingsvorschlag, Betreuung, Grundlagen und Antworten – ohne Gesundheitsantwort und zugehörige Hinweise. Im nächsten Schritt wählst du das Mitglied und bestätigst die Ablage.</p>
-        <p class="export-help">Testbetrieb: Bitte ausschließlich erfundene Fragebogenantworten verwenden. Die Übergabe geht an unseren geschützten Dienst auf api.gladiator76.de und nach Bestätigung an die Magicline-Sandbox. Eine abgelegte PDF bleibt nach „Neu starten“ erhalten.</p>
+        <p class="export-help">Die Übergabe öffnet unseren geschützten Mitarbeiterzugang. Dort siehst du, ob Sandbox oder Produktion aktiv ist. Prüfe das angezeigte Mitglied vor dem Speichern. In der Sandbox nur erfundene Antworten verwenden. Eine abgelegte PDF bleibt nach „Neu starten“ erhalten.</p>
         <button class="primary-btn" id="magiclineBtn" type="button">In Magicline ablegen →</button>
         <p id="magiclineStatus" role="status" aria-live="polite"></p>
         <section id="magiclineNotes" class="manual-notes" aria-labelledby="magiclineNotesTitle" hidden>
